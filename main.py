@@ -7,6 +7,7 @@ import pandas as pd
 
 ######### CONEXION SQLITE###################
 import sqlite3
+import random
 
 
 class Comunicacion:
@@ -198,10 +199,29 @@ class Ventana(Frame):
             command=self.guardar_datos,
         ).grid(column=2, row=5, pady=5, padx=5)
 
+        Button(
+            self.frame_uno,
+            text="CAMBIAR COLOR",
+            font=("Arial", 9, "bold"),
+            bg="deep sky blue",
+            width=20,
+            bd=3,
+            command=self.change_frame_color,
+        ).grid(column=2, row=6, pady=5, padx=5)
+        Button(
+            self.frame_uno,
+            text="BORRAR (seleccionar y doble click)",
+            font=("Arial", 9, "bold"),
+            bg="deep sky blue",
+            width=20,
+            bd=3,
+            # command=self.change_frame_color,
+        ).grid(column=2, row=7, pady=5, padx=5)
+
         estilo_tabla = ttk.Style()
         estilo_tabla.configure(
             "Treeview",
-            font=("Helvetica", 20, "bold"),
+            font=("Helvetica", 15),
             foreground="black",
             background="white",
         )
@@ -215,7 +235,7 @@ class Ventana(Frame):
             background="white",
             foreground="black",
             padding=3,
-            font=("Arial", 20, "bold"),
+            font=("Arial", 15, "bold"),
         )
 
         self.tabla = ttk.Treeview(self.frame_dos)
@@ -328,6 +348,10 @@ class Ventana(Frame):
         df = pd.DataFrame(datos, columns=["Nombre", "Edad", "Correo", "Telefono"])
         df.to_excel(f"DATOS {fecha}.xlsx")
         messagebox.showinfo("Informacion", "Datos guardados")
+
+    def change_frame_color(self):
+        colors = ["red", "green", "blue", "yellow", "orange", "purple"]
+        self.frame_uno.configure(bg=random.choice(colors))
 
 
 if __name__ == "__main__":
