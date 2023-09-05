@@ -81,7 +81,7 @@ class Ventana(Frame):
 
         Label(
             self.frame_uno,
-            text="Opciones",
+            text="BOTONES",
             bg="white",
             fg="black",
             font=("Kaufmann BT", 13, "bold"),
@@ -99,7 +99,7 @@ class Ventana(Frame):
 
         Label(
             self.frame_uno,
-            text="Agregar y actualizar datos",
+            text="AGENDA - UTN",
             fg="black",
             bg="white",
             font=("Kaufmann BT", 13, "bold"),
@@ -232,8 +232,8 @@ class Ventana(Frame):
         )
         estilo_tabla.configure(
             "Heading",
-            background="white",
-            foreground="black",
+            background="grey",
+            foreground="white",
             padding=3,
             font=("Arial", 15, "bold"),
         )
