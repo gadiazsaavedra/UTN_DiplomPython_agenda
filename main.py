@@ -4,7 +4,7 @@ from tkinter import StringVar, Scrollbar, Frame, messagebox
 # from conexion_sqlite import Comunicacion
 from time import strftime
 import pandas as pd
-
+import matplotlib.pyplot as plt
 ######### CONEXION SQLITE###################
 import sqlite3
 import random
@@ -276,7 +276,7 @@ class Ventana(Frame):
     def eliminar_datos(self, event):
         self.limpiar_campos()
         item = self.tabla.selection()[0]
-        x = messagebox.askquestion("Informacion", "Desea Continuar?")
+        x = messagebox.askquestion("Informacion", "Esta por BORRAR dato. Desea Continuar?")
         if x == "yes":
             self.tabla.delete(item)
             self.base_datos.elimina_datos(self.data["text"])
@@ -352,6 +352,7 @@ class Ventana(Frame):
     def change_frame_color(self):
         colors = ["red", "green", "blue", "yellow", "orange", "purple"]
         self.frame_uno.configure(bg=random.choice(colors))
+
 
 
 if __name__ == "__main__":
