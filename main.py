@@ -1,29 +1,82 @@
 from tkinter import Tk, Button, Entry, Label, PhotoImage, ttk
 from tkinter import StringVar, Scrollbar, Frame, messagebox
-
-# from conexion_sqlite import Comunicacion
 from time import strftime
 import pandas as pd
 import matplotlib.pyplot as plt
-######### CONEXION SQLITE###################
 import sqlite3
 import random
+import re
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 
 class Comunicacion:
     def __init__(self):
         self.conexion = sqlite3.connect("base_datos.db")
+        self.cursor = self.conexion.cursor()
+        self.nombre = ""
+        self.edad = ""
+        self.correo = ""
+        self.telefono = ""
+
+    class UserInput(BaseModel):
+        nombre: str = Field(..., min_length=2)
+        edad: int = Field(..., ge=18, le=100)
+        correo: EmailStr
+        telefono: int
+
+        @classmethod
+        def validate_input(cls, nombre, edad, correo, telefono):
+            """
+            Validates user input for each field (nombre, edad, correo, telefono) and raises a ValueError if the input is not valid.
+            """
+            error_message = ""
+            try:
+                user_input = cls(
+                    nombre=nombre, edad=edad, correo=correo, telefono=telefono
+                )
+                user_input.model_validate(user_input.model_dump())
+                is_valid = True
+            except ValidationError as e:
+                is_valid = False
+
+                if "less_than_equal" in str(e):
+                    messagebox.showerror("Error", "Edad fuera de rango (18-100 Años)")
+                elif "nombre" in str(e):
+                    messagebox.showerror(
+                        "Error", "El Nombre debe tener mas de dos letras"
+                    )
+                elif "correo" in str(e):
+                    messagebox.showerror("Error", "Correo inválido")
+                elif "telefono" in str(e):
+                    messagebox.showerror("Error", "Telefono inválido")
+                else:
+                    error_message = str(e)
+
+            return is_valid, error_message
 
     def inserta_datos(self, nombre, edad, correo, telefono):
-        cursor = self.conexion.cursor()
-
-        bd = """INSERT INTO datos (NOMBRE, EDAD, CORREO, TELEFONO)
-        VALUES('{}','{}','{}','{}')""".format(
+        """
+        Inserts the data into the database if it is valid.
+        """
+        is_valid, error_message = self.UserInput.validate_input(
             nombre, edad, correo, telefono
         )
-        cursor.execute(bd)
-        self.conexion.commit()
-        cursor.close()
+        if is_valid:
+            try:
+                cursor = self.conexion.cursor()
+
+                bd = """INSERT INTO datos (NOMBRE, EDAD, CORREO, TELEFONO)
+                VALUES('{}','{}','{}','{}')""".format(
+                    nombre, edad, correo, telefono
+                )
+                cursor.execute(bd)
+                self.conexion.commit()
+                cursor.close()
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", str(e))
+        else:
+            messagebox.showerror("Invalid Input", error_message)
+        messagebox.showinfo("Success", "Ud. inserta datos")
 
     def mostrar_datos(self):
         cursor = self.conexion.cursor()
@@ -39,19 +92,28 @@ class Comunicacion:
         cursor.close()
 
     def actualiza_datos(self, ID, nombre, edad, correo, telefono):
-        cursor = self.conexion.cursor()
-        bd = """UPDATE datos SET NOMBRE='{}', EDAD='{}', CORREO='{}', TELEFONO='{}'
-        WHERE ID='{}' """.format(
-            nombre, edad, correo, telefono, ID
+        is_valid, error_message = self.UserInput.validate_input(
+            nombre, edad, correo, telefono
         )
-        cursor.execute(bd)
-        dato = cursor.rowcount
-        self.conexion.commit()
-        cursor.close()
-        return dato
+        if is_valid:
+            dato = None
+            try:
+                cursor = self.conexion.cursor()
+                bd = """UPDATE datos SET NOMBRE='{}', EDAD='{}', CORREO='{}', TELEFONO='{}'
+                WHERE ID='{}' """.format(
+                    nombre, edad, correo, telefono, ID
+                )
+                cursor.execute(bd)
+                dato = cursor.rowcount
+                self.conexion.commit()
+                cursor.close()
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", str(e))
+            else:
+                messagebox.showerror("Invalid Input", error_message)
+                return dato
 
 
-##########MAIN.PY############################
 class Ventana(Frame):
     def __init__(self, master):
         super().__init__(master)
@@ -230,10 +292,11 @@ class Ventana(Frame):
             background=[("selected", "deep sky blue")],
             foreground=[("selected", "black")],
         )
+
         estilo_tabla.configure(
             "Heading",
             background="grey",
-            foreground="white",
+            foreground="black",
             padding=3,
             font=("Arial", 15, "bold"),
         )
@@ -276,7 +339,9 @@ class Ventana(Frame):
     def eliminar_datos(self, event):
         self.limpiar_campos()
         item = self.tabla.selection()[0]
-        x = messagebox.askquestion("Informacion", "Esta por BORRAR dato. Desea Continuar?")
+        x = messagebox.askquestion(
+            "Informacion", "Esta por BORRAR dato. Desea Continuar?"
+        )
         if x == "yes":
             self.tabla.delete(item)
             self.base_datos.elimina_datos(self.data["text"])
@@ -347,12 +412,15 @@ class Ventana(Frame):
         }
         df = pd.DataFrame(datos, columns=["Nombre", "Edad", "Correo", "Telefono"])
         df.to_excel(f"DATOS {fecha}.xlsx")
-        messagebox.showinfo("Informacion", "Datos guardados")
+        messagebox.showinfo("Informacion", "Datos exportados a Excel..!!")
 
     def change_frame_color(self):
         colors = ["red", "green", "blue", "yellow", "orange", "purple"]
         self.frame_uno.configure(bg=random.choice(colors))
 
+    def validate_input(self, input_value, regex_pattern, error_message):
+        if not input_value or not re.match(regex_pattern, input_value):
+            raise ValueError(error_message)
 
 
 if __name__ == "__main__":
