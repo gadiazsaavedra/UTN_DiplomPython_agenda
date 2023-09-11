@@ -10,6 +10,20 @@ from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 
 class Comunicacion:
+    """
+    Clase que maneja la comunicación con la base de datos.
+
+    Args: self
+
+    Atributos:
+        conexion (sqlite3.Connection): La conexión con la base de datos.
+        cursor (sqlite3.Cursor): El cursor para ejecutar las consultas SQL.
+        nombre (str): El nombre del usuario.
+        edad (str): La edad del usuario.
+        correo (str): El correo electrónico del usuario.
+        telefono (str): El número de teléfono del usuario.
+    """
+
     def __init__(self):
         self.conexion = sqlite3.connect("base_datos.db")
         self.cursor = self.conexion.cursor()
@@ -19,6 +33,33 @@ class Comunicacion:
         self.telefono = ""
 
     class UserInput(BaseModel):
+        """
+        Clase que representa la entrada del usuario y proporciona métodos de validación.
+
+        Args:
+            cls: La clase en sí.
+            nombre (str): El nombre del usuario.
+            edad (int): La edad del usuario.
+            correo (str): El correo electrónico del usuario.
+            telefono (int): El número de teléfono del usuario.
+
+        Devuelve:
+            Tupla[bool, str]: Una tupla que indica si la entrada es válida y un mensaje de error en caso contrario.
+
+        Lanza:
+            ValidationError: Aparece cuando la entrada no es válida.
+
+        Ejemplo:
+            ```
+            user_input = UserInput()
+            is_valid, error_message = user_input.validate_input("Juan", 25, "juan@ejemplo.com", 1234567890)
+            if is_valid:
+                print("La entrada es válida")
+            si no:
+                print(f "La entrada no es válida: {mensaje_error}")
+            ```
+        """
+
         nombre: str = Field(..., min_length=2)
         edad: int = Field(..., ge=18, le=100)
         correo: EmailStr
@@ -27,7 +68,7 @@ class Comunicacion:
         @classmethod
         def validate_input(cls, nombre, edad, correo, telefono):
             """
-            Validates user input for each field (nombre, edad, correo, telefono) and raises a ValueError if the input is not valid.
+            Valida la entrada del usuario para cada campo (nombre, edad, correo, teléfono) y genera un ValueError si la entrada no es válida.
             """
             error_message = ""
             try:
@@ -56,7 +97,13 @@ class Comunicacion:
 
     def inserta_datos(self, nombre, edad, correo, telefono):
         """
-        Inserts the data into the database if it is valid.
+        Inserta los datos en la base de datos si son válidos.
+        Args:
+            self
+            nombre (str): El nombre del usuario.
+            edad (int): La edad del usuario.
+            correo (str): El correo electrónico del usuario.
+            telefono (int): El número de teléfono del usuario.
         """
         is_valid, error_message = self.UserInput.validate_input(
             nombre, edad, correo, telefono
@@ -79,12 +126,31 @@ class Comunicacion:
         messagebox.showinfo("Success", "Ud. inserta datos")
 
     def mostrar_datos(self):
+        """
+        Recupera todos los datos de la base de datos.
+
+        Args:
+            self
+
+        Devuelve:
+            Lista[Tupla]: Una lista de tuplas que representan los datos.
+        """
         cursor = self.conexion.cursor()
         bd = "SELECT*FROM datos"
         cursor.execute(bd)
         return cursor.fetchall()
 
     def elimina_datos(self, nombre):
+        """
+        Elimina datos de la base de datos basándose en el nombre.
+
+        Args:
+            self
+            nombre (str): El nombre del usuario.
+
+        Devuelve:
+            Ninguno
+        """
         cursor = self.conexion.cursor()
         bd = f"""DELETE FROM datos WHERE NOMBRE='{nombre}' """
         cursor.execute(bd)
@@ -92,6 +158,20 @@ class Comunicacion:
         cursor.close()
 
     def actualiza_datos(self, ID, nombre, edad, correo, telefono):
+        """
+        Actualiza los datos en la base de datos basándose en el ID.
+
+        Args:
+            self
+            ID (int): El ID de los datos.
+            nombre (str): El nombre del usuario.
+            edad (int): La edad del usuario.
+            correo (str): El correo electrónico del usuario.
+            telefono (int): El número de teléfono del usuario.
+
+        Devuelve:
+            int: El número de filas afectadas por la actualización.
+        """
         is_valid, error_message = self.UserInput.validate_input(
             nombre, edad, correo, telefono
         )
@@ -115,6 +195,20 @@ class Comunicacion:
 
 
 class Ventana(Frame):
+    """
+    Clase que representa una ventana con varios widgets para gestionar los datos de una base de datos.
+
+    Args:
+        master: El widget maestro.
+
+    Atributos:
+        nombre (StringVar): El nombre del usuario.
+        edad (StringVar): La edad del usuario.
+        correo (StringVar): El correo electrónico del usuario.
+        telefono (StringVar): El número de teléfono del usuario.
+        base_datos (Comunicacion): Una instancia de la clase Comunicación para la comunicación con la base de datos.
+    """
+
     def __init__(self, master):
         super().__init__(master)
 
@@ -131,6 +225,15 @@ class Ventana(Frame):
         self.widgets()
 
     def widgets(self):
+        """
+        Crea y configura los widgets para la ventana.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         self.frame_uno = Frame(self.master, bg="pink", height=200, width=800)
         self.frame_uno.grid(row=0, column=0, sticky="nsew")
         self.frame_dos = Frame(self.master, bg="white", height=300, width=800)
@@ -295,8 +398,8 @@ class Ventana(Frame):
 
         estilo_tabla.configure(
             "Heading",
-            background="grey",
-            foreground="black",
+            background="light grey",
+            foreground="white",
             padding=3,
             font=("Arial", 15, "bold"),
         )
@@ -328,6 +431,15 @@ class Ventana(Frame):
         self.tabla.bind("<Double-1>", self.eliminar_datos)
 
     def obtener_fila(self, event):
+        """
+        Recupera la fila seleccionada de la tabla.
+
+        Args:
+            Evento: El evento que disparó la función.
+
+        Devuelve:
+            Ninguno
+        """
         item = self.tabla.focus()
         self.data = self.tabla.item(item)
         if self.data["values"]:
@@ -337,6 +449,15 @@ class Ventana(Frame):
             self.telefono.set(self.data["values"][2])
 
     def eliminar_datos(self, event):
+        """
+        Elimina los datos seleccionados de la tabla y de la base de datos.
+
+        Args:
+            Evento: El evento que disparó la función.
+
+        Devuelve:
+            Ninguno
+        """
         self.limpiar_campos()
         item = self.tabla.selection()[0]
         x = messagebox.askquestion(
@@ -347,6 +468,15 @@ class Ventana(Frame):
             self.base_datos.elimina_datos(self.data["text"])
 
     def agregar_datos(self):
+        """
+        Añade los datos de los campos de entrada a la tabla y a la base de datos.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         nombre = self.nombre.get()
         edad = self.edad.get()
         correo = self.correo.get()
@@ -358,6 +488,15 @@ class Ventana(Frame):
             self.limpiar_campos()
 
     def actualizar_tabla(self):
+        """
+        Actualiza la tabla con los últimos datos de la base de datos.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         self.limpiar_campos()
         datos = self.base_datos.mostrar_datos()
         self.tabla.delete(*self.tabla.get_children())
@@ -367,6 +506,15 @@ class Ventana(Frame):
             self.tabla.insert("", "end", text=text, values=values)
 
     def actualizar_datos(self):
+        """
+        Actualiza los datos seleccionados en la tabla y en la base de datos.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         item = self.tabla.focus()
         self.data = self.tabla.item(item)
         nombre = self.data["text"]
@@ -394,12 +542,30 @@ class Ventana(Frame):
                             )
 
     def limpiar_campos(self):
+        """
+        Borra los campos de entrada.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         self.nombre.set("")
         self.edad.set("")
         self.correo.set("")
         self.telefono.set("")
 
     def guardar_datos(self):
+        """
+        Exporta los datos de la tabla a un fichero Excel.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
         self.limpiar_campos()
         datos = self.base_datos.mostrar_datos()
         nombre, edad, correo, telefono = list(zip(*datos))[1:5]
@@ -415,10 +581,33 @@ class Ventana(Frame):
         messagebox.showinfo("Informacion", "Datos exportados a Excel..!!")
 
     def change_frame_color(self):
+        """
+        Cambia el color de fondo del frame.
+
+        Args:
+            self
+
+        Returns:
+            Ninguno
+        """
         colors = ["red", "green", "blue", "yellow", "orange", "purple"]
         self.frame_uno.configure(bg=random.choice(colors))
 
     def validate_input(self, input_value, regex_pattern, error_message):
+        """
+        Valida el valor de entrada contra un patrón regex y genera un ValueError si no es válido.
+
+        Args:
+            valor_entrada (str): El valor de entrada a validar.
+            regex_pattern (cadena): El patrón regex con el que se va a comparar.
+            mensaje_error (cadena): El mensaje de error que se mostrará si el valor de entrada no es válido.
+
+        Devuelve:
+            Ninguno
+
+        Lanza:
+            ValueError: Aparece cuando el valor introducido no es válido.
+        """
         if not input_value or not re.match(regex_pattern, input_value):
             raise ValueError(error_message)
 
