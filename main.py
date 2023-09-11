@@ -399,7 +399,7 @@ class Ventana(Frame):
         estilo_tabla.configure(
             "Heading",
             background="light grey",
-            foreground="white",
+            foreground="black",
             padding=3,
             font=("Arial", 15, "bold"),
         )
