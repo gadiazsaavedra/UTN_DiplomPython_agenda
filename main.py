@@ -193,6 +193,24 @@ class Comunicacion:
                 messagebox.showerror("Invalid Input", error_message)
                 return dato
 
+    def buscar_datos_por_nombre(self, nombre):
+        """
+        Busca datos en la base de datos basándose en el nombre.
+
+        Args:
+            self
+            nombre (str): El nombre del usuario.
+
+        Devuelve:
+            datos (list): Una lista de datos que coinciden con el nombre.
+        """
+        cursor = self.conexion.cursor()
+        bd = f"""SELECT * FROM datos WHERE NOMBRE LIKE '{nombre}%' """
+        cursor.execute(bd)
+        datos = cursor.fetchall()
+        cursor.close()
+        return datos
+
 
 class Ventana(Frame):
     """
@@ -253,7 +271,7 @@ class Ventana(Frame):
         ).grid(column=2, row=0)
         Button(
             self.frame_uno,
-            text="REFRESCAR LISTA DE DATOS",
+            text="MOSTRAR/REFRESCAR DATOS",
             font=("Arial", 9, "bold"),
             command=self.actualizar_tabla,
             fg="black",
@@ -382,6 +400,26 @@ class Ventana(Frame):
             bd=3,
             # command=self.change_frame_color,
         ).grid(column=2, row=7, pady=5, padx=5)
+        Button(
+            self.frame_uno,
+            text="MOSTRAR NOMBRE SELECCIÓN",
+            font=("Arial", 9, "bold"),
+            command=self.consultar_datos,  # Add the command for the "Consultar" button
+            fg="black",
+            bg="light green",
+            width=20,
+            bd=3,
+        ).grid(column=2, pady=5)
+        Button(
+            self.frame_uno,
+            text="BUSCA POR NOMBRE",
+            font=("Arial", 9, "bold"),
+            command=self.look_for_name,  # Add the command for the "buscar nombre" button
+            fg="black",
+            bg="light green",
+            width=20,
+            bd=3,
+        ).grid(column=2, pady=5)
 
         estilo_tabla = ttk.Style()
         estilo_tabla.configure(
@@ -399,7 +437,7 @@ class Ventana(Frame):
         estilo_tabla.configure(
             "Heading",
             background="light grey",
-            foreground="black",
+            foreground="green",
             padding=3,
             font=("Arial", 15, "bold"),
         )
@@ -610,6 +648,48 @@ class Ventana(Frame):
         """
         if not input_value or not re.match(regex_pattern, input_value):
             raise ValueError(error_message)
+
+    def consultar_datos(self):
+        """
+        Consulta los datos seleccionados en la tabla.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
+        item = self.tabla.focus()
+        data = self.tabla.item(item)
+        if data["values"]:
+            nombre = data["text"]
+            edad = data["values"][0]
+            correo = data["values"][1]
+            telefono = data["values"][2]
+            messagebox.showinfo(
+                "Información",
+                f"Nombre: {nombre}\nEdad: {edad}\nCorreo: {correo}\nTeléfono: {telefono}",
+            )
+
+    def look_for_name(self):
+        """
+        Busca un nombre dentro de la tabla y muestra todas las coincidencias.
+
+        Args:
+            self
+
+        Devuelve:
+            Ninguno
+        """
+        if name := self.nombre.get():
+            self.tabla.delete(*self.tabla.get_children())
+            datos = self.base_datos.buscar_datos_por_nombre(name)
+            for dato in datos:
+                text = dato[1]
+                values = dato[2:5]
+                self.tabla.insert("", "end", text=text, values=values)
+        else:
+            messagebox.showinfo("Información", "Ingrese un nombre para buscar.")
 
 
 if __name__ == "__main__":
